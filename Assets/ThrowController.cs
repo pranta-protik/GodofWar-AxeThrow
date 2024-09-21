@@ -20,39 +20,34 @@ public class ThrowController : MonoBehaviour
     private Vector3 origLocRot;
     private Vector3 pullPosition;
 
-    [Header("Public References")]
-    public Transform weapon;
+    [Header("Public References")] public Transform weapon;
     public Transform hand;
     public Transform spine;
     public Transform curvePoint;
-    [Space]
-    [Header("Parameters")]
-    public float throwPower = 30;
+    [Space] [Header("Parameters")] public float throwPower = 30;
     public float cameraZoomOffset = .3f;
-    [Space]
-    [Header("Bools")]
-    public bool walking = true;
+    [Space] [Header("Bools")] public bool walking = true;
     public bool aiming = false;
     public bool hasWeapon = true;
     public bool pulling = false;
-    [Space]
-    [Header("Particles and Trails")]
+
+    [Space] [Header("Particles and Trails")]
     public ParticleSystem glowParticle;
+
     public ParticleSystem catchParticle;
     public ParticleSystem trailParticle;
     public TrailRenderer trailRenderer;
-    [Space]
-    [Header("UI")]
-    public Image reticle;
+    [Space] [Header("UI")] public Image reticle;
 
     [Space]
     //Cinemachine Shake
     public CinemachineFreeLook virtualCamera;
+
     public CinemachineImpulseSource impulseSource;
 
-    void Start()
-    {
+    void Start() {
         Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Confined;
 
         animator = GetComponent<Animator>();
         input = GetComponent<MovementInput>();
@@ -64,16 +59,13 @@ public class ThrowController : MonoBehaviour
 
     }
 
-    void Update()
-    {
+    void Update() {
 
         //If aiming rotate the player towards the camera foward, if not reset the camera rotation on the x axis
-        if (aiming)
-        {
+        if (aiming) {
             input.RotateToCamera(transform);
         }
-        else
-        {
+        else {
             transform.eulerAngles = new Vector3(Mathf.LerpAngle(transform.eulerAngles.x, 0, .2f), transform.eulerAngles.y, transform.eulerAngles.z);
         }
 
@@ -83,54 +75,43 @@ public class ThrowController : MonoBehaviour
         animator.SetBool("walking", walking);
 
 
-        if(Input.GetMouseButtonDown(1) && hasWeapon)
-        {
+        if (Input.GetMouseButtonDown(1) && hasWeapon) {
             Aim(true, true, 0);
         }
 
-        if(Input.GetMouseButtonUp(1) && hasWeapon)
-        {
+        if (Input.GetMouseButtonUp(1) && hasWeapon) {
             Aim(false, true, 0);
         }
 
-        if (hasWeapon)
-        {
+        if (hasWeapon) {
 
-            if (aiming && Input.GetMouseButtonDown(0))
-            {
+            if (aiming && Input.GetMouseButtonDown(0)) {
                 animator.SetTrigger("throw");
             }
 
         }
-        else
-        {
-            if (Input.GetMouseButtonDown(0))
-            {
+        else {
+            if (Input.GetMouseButtonDown(0)) {
                 WeaponStartPull();
             }
         }
 
-        if (pulling)
-        {
-            if(returnTime < 1)
-            {
+        if (pulling) {
+            if (returnTime < 1) {
                 weapon.position = GetQuadraticCurvePoint(returnTime, pullPosition, curvePoint.position, hand.position);
                 returnTime += Time.deltaTime * 1.5f;
             }
-            else
-            {
+            else {
                 WeaponCatch();
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.R))
-        {
+        if (Input.GetKeyDown(KeyCode.R)) {
             SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().name);
         }
     }
 
-    void Aim(bool state, bool changeCamera, float delay)
-    {
+    void Aim(bool state, bool changeCamera, float delay) {
 
         if (walking)
             return;
@@ -152,19 +133,16 @@ public class ThrowController : MonoBehaviour
         DOVirtual.Float(originalAim, newAim, .5f, CameraOffset).SetDelay(delay);
 
         //Particle
-        if (state)
-        {
+        if (state) {
             glowParticle.Play();
         }
-        else
-        {
+        else {
             glowParticle.Stop();
         }
 
     }
 
-    public void WeaponThrow()
-    {
+    public void WeaponThrow() {
         Aim(false, true, 1f);
 
         hasWeapon = false;
@@ -172,8 +150,8 @@ public class ThrowController : MonoBehaviour
         weaponRb.isKinematic = false;
         weaponRb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         weapon.parent = null;
-        weapon.eulerAngles = new Vector3(0, -90 +transform.eulerAngles.y, 0);
-        weapon.transform.position += transform.right/5;
+        weapon.eulerAngles = new Vector3(0, -90 + transform.eulerAngles.y, 0);
+        weapon.transform.position += transform.right / 5;
         weaponRb.AddForce(Camera.main.transform.forward * throwPower + transform.up * 2, ForceMode.Impulse);
 
         //Trail
@@ -181,8 +159,7 @@ public class ThrowController : MonoBehaviour
         trailParticle.Play();
     }
 
-    public void WeaponStartPull()
-    {
+    public void WeaponStartPull() {
         pullPosition = weapon.position;
         weaponRb.Sleep();
         weaponRb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
@@ -193,8 +170,7 @@ public class ThrowController : MonoBehaviour
         pulling = true;
     }
 
-    public void WeaponCatch()
-    {
+    public void WeaponCatch() {
         returnTime = 0;
         pulling = false;
         weapon.parent = hand;
@@ -213,16 +189,14 @@ public class ThrowController : MonoBehaviour
 
     }
 
-    public Vector3 GetQuadraticCurvePoint(float t, Vector3 p0, Vector3 p1, Vector3 p2)
-    {
+    public Vector3 GetQuadraticCurvePoint(float t, Vector3 p0, Vector3 p1, Vector3 p2) {
         float u = 1 - t;
         float tt = t * t;
         float uu = u * u;
         return (uu * p0) + (2 * u * t * p1) + (tt * p2);
     }
 
-    void CameraOffset(float offset)
-    {
+    void CameraOffset(float offset) {
         virtualCamera.GetRig(0).GetCinemachineComponent<CinemachineComposer>().m_TrackedObjectOffset = new Vector3(offset, 1.5f, 0);
         virtualCamera.GetRig(1).GetCinemachineComponent<CinemachineComposer>().m_TrackedObjectOffset = new Vector3(offset, 1.5f, 0);
         virtualCamera.GetRig(2).GetCinemachineComponent<CinemachineComposer>().m_TrackedObjectOffset = new Vector3(offset, 1.5f, 0);
